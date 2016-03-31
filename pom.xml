@@ -58,10 +58,85 @@
     <frontend-maven-plugin.version>0.0.23</frontend-maven-plugin.version>
     <findbugs-maven-plugin.version>3.0.1</findbugs-maven-plugin.version>
     <javadoc-maven-plugin.version>2.9.1</javadoc-maven-plugin.version>
+    <!-- tracing -->
+    <tracingplane.version>4.0</tracingplane.version>
   </properties>
   <scm>
     <connection>${scm.url}</connection>
   </scm>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.aspectj</groupId>
+      <artifactId>aspectjrt</artifactId>
+      <version>1.8.7</version>
+    </dependency>
+    <dependency>
+      <groupId>edu.brown.cs.systems</groupId>
+      <artifactId>tracingplane-common</artifactId>
+      <version>${tracingplane.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>edu.brown.cs.systems</groupId>
+      <artifactId>xtrace-common</artifactId>
+      <version>${tracingplane.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>edu.brown.cs.systems</groupId>
+      <artifactId>pivottracing-common</artifactId>
+      <version>${tracingplane.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>edu.brown.cs.systems</groupId>
+      <artifactId>retro-common</artifactId>
+      <version>${tracingplane.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>edu.brown.cs.systems</groupId>
+      <artifactId>tracingplane-client</artifactId>
+      <version>${tracingplane.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>edu.brown.cs.systems</groupId>
+      <artifactId>xtrace-client</artifactId>
+      <version>${tracingplane.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>edu.brown.cs.systems</groupId>
+      <artifactId>pivottracing-agent</artifactId>
+      <version>${tracingplane.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>edu.brown.cs.systems</groupId>
+      <artifactId>retro-resources</artifactId>
+      <version>${tracingplane.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>edu.brown.cs.systems</groupId>
+      <artifactId>retro-throttling</artifactId>
+      <version>${tracingplane.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>edu.brown.cs.systems</groupId>
+      <artifactId>tracingplane-aspects</artifactId>
+      <version>${tracingplane.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>edu.brown.cs.systems</groupId>
+      <artifactId>xtrace-aspects</artifactId>
+      <version>${tracingplane.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>edu.brown.cs.systems</groupId>
+      <artifactId>pivottracing-aspects</artifactId>
+      <version>${tracingplane.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>edu.brown.cs.systems</groupId>
+      <artifactId>retro-aspects</artifactId>
+      <version>${tracingplane.version}</version>
+    </dependency>
+  </dependencies>
 
   <distributionManagement>
     <repository>
@@ -935,6 +1010,47 @@
     </pluginManagement>
 
     <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>aspectj-maven-plugin</artifactId>
+        <version>1.8</version>
+        <configuration>
+          <aspectLibraries>
+            <aspectLibrary>
+              <groupId>edu.brown.cs.systems</groupId>
+              <artifactId>tracingplane-aspects</artifactId>
+            </aspectLibrary>
+            <aspectLibrary>
+              <groupId>edu.brown.cs.systems</groupId>
+              <artifactId>retro-aspects</artifactId>
+            </aspectLibrary>
+            <aspectLibrary>
+              <groupId>edu.brown.cs.systems</groupId>
+              <artifactId>xtrace-aspects</artifactId>
+            </aspectLibrary>
+            <aspectLibrary>
+              <groupId>edu.brown.cs.systems</groupId>
+              <artifactId>pivottracing-aspects</artifactId>
+            </aspectLibrary>
+          </aspectLibraries>
+        </configuration>
+        <executions>
+         <execution>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <source>1.7</source>
+              <target>1.7</target>
+              <complianceLevel>1.7</complianceLevel>
+              <Xjoinpoints>synchronization</Xjoinpoints>
+              <showWeaveInfo>false</showWeaveInfo>
+              <verbose>false</verbose>
+              <Xlint>unmatchedSuperTypeInCall=ignore,adviceDidNotMatch=ignore,typeNotExposedToWeaver=ignore,uncheckedAdviceConversion=ignore,invalidAbsoluteTypeName=ignore</Xlint>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
