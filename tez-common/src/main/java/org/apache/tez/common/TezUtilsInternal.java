@@ -26,6 +26,7 @@ import java.nio.charset.Charset;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DataFormatException;
@@ -114,23 +115,23 @@ public class TezUtilsInternal {
 
 
   public static byte[] compressBytes(byte[] inBytes) throws IOException {
-    Stopwatch sw = new Stopwatch().start();
+    Stopwatch sw = Stopwatch.createStarted();
     byte[] compressed = compressBytesInflateDeflate(inBytes);
     sw.stop();
     if (LOG.isDebugEnabled()) {
       LOG.debug("UncompressedSize: " + inBytes.length + ", CompressedSize: " + compressed.length
-          + ", CompressTime: " + sw.elapsedMillis());
+          + ", CompressTime: " + sw.elapsed(TimeUnit.MILLISECONDS));
     }
     return compressed;
   }
 
   public static byte[] uncompressBytes(byte[] inBytes) throws IOException {
-    Stopwatch sw = new Stopwatch().start();
+    Stopwatch sw = Stopwatch.createStarted();
     byte[] uncompressed = uncompressBytesInflateDeflate(inBytes);
     sw.stop();
     if (LOG.isDebugEnabled()) {
       LOG.debug("CompressedSize: " + inBytes.length + ", UncompressedSize: " + uncompressed.length
-          + ", UncompressTimeTaken: " + sw.elapsedMillis());
+          + ", UncompressTimeTaken: " + sw.elapsed(TimeUnit.MILLISECONDS));
     }
     return uncompressed;
   }

@@ -23,12 +23,9 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-
-import com.google.common.base.Stopwatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -50,6 +47,10 @@ import org.apache.tez.dag.api.Vertex;
 import org.apache.tez.examples.TezExampleBase;
 import org.apache.tez.runtime.api.ProcessorContext;
 import org.apache.tez.runtime.library.processor.SimpleProcessor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Stopwatch;
 
 public class RPCLoadGen extends TezExampleBase {
 
@@ -187,7 +188,7 @@ public class RPCLoadGen extends TezExampleBase {
 
     @Override
     public void run() throws Exception {
-      Stopwatch sw = new Stopwatch().start();
+      Stopwatch sw = Stopwatch.createStarted();
       long sleepTime = random.nextInt(sleepTimeMax);
       if (modeByte == VIA_RPC_BYTE) {
         LOG.info("Received via RPC.");
@@ -204,7 +205,7 @@ public class RPCLoadGen extends TezExampleBase {
       } else {
         throw new IllegalArgumentException("Unknown execution mode: [" + modeByte + "]");
       }
-      LOG.info("TimeTakenToAccessPayload=" + sw.stop().elapsedMillis());
+      LOG.info("TimeTakenToAccessPayload=" + sw.stop().elapsed(TimeUnit.MILLISECONDS));
       LOG.info("Sleeping for: " + sleepTime);
       Thread.sleep(sleepTime);
     }

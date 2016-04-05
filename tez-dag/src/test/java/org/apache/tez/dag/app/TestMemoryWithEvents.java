@@ -20,6 +20,7 @@ package org.apache.tez.dag.app;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Stopwatch;
 import org.apache.hadoop.conf.Configuration;
@@ -117,8 +118,7 @@ public class TestMemoryWithEvents {
   }
   
   private void testMemory(DAG dag, boolean sendDMEvents) throws Exception {
-    Stopwatch stopwatch = new Stopwatch();
-    stopwatch.start();
+    Stopwatch stopwatch = Stopwatch.createStarted();
     TezConfiguration tezconf = new TezConfiguration(defaultConf);
 
     MockTezClient tezClient = new MockTezClient("testMockAM", tezconf, true, null, null, null,
@@ -137,7 +137,7 @@ public class TestMemoryWithEvents {
     Assert.assertEquals(DAGStatus.State.SUCCEEDED, status.getState());
     checkMemory(dag.getName(), mockApp);
     stopwatch.stop();
-    System.out.println("Time taken(ms): " + stopwatch.elapsedMillis());
+    System.out.println("Time taken(ms): " + stopwatch.elapsed(TimeUnit.MILLISECONDS));
     tezClient.stop();
   }
   

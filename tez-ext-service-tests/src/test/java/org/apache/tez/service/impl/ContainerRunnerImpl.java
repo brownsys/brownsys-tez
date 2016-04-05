@@ -26,19 +26,10 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.google.common.base.Preconditions;
-import com.google.common.base.Stopwatch;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -57,25 +48,36 @@ import org.apache.tez.common.TezTaskUmbilicalProtocol;
 import org.apache.tez.common.security.JobTokenIdentifier;
 import org.apache.tez.common.security.TokenCache;
 import org.apache.tez.dag.api.TezConfiguration;
+import org.apache.tez.dag.api.TezConstants;
 import org.apache.tez.dag.api.TezException;
 import org.apache.tez.hadoop.shim.DefaultHadoopShim;
-import org.apache.tez.runtime.api.impl.TaskSpec;
-import org.apache.tez.runtime.task.TaskReporter;
-import org.apache.tez.runtime.task.TaskRunner2Result;
-import org.apache.tez.runtime.task.TezTaskRunner2;
-import org.apache.tez.service.ContainerRunner;
-import org.apache.tez.dag.api.TezConstants;
 import org.apache.tez.runtime.api.ExecutionContext;
 import org.apache.tez.runtime.api.impl.ExecutionContextImpl;
+import org.apache.tez.runtime.api.impl.TaskSpec;
 import org.apache.tez.runtime.common.objectregistry.ObjectRegistryImpl;
+import org.apache.tez.runtime.task.TaskReporter;
+import org.apache.tez.runtime.task.TaskRunner2Result;
 import org.apache.tez.runtime.task.TezChild;
 import org.apache.tez.runtime.task.TezChild.ContainerExecutionResult;
+import org.apache.tez.runtime.task.TezTaskRunner2;
+import org.apache.tez.service.ContainerRunner;
 import org.apache.tez.shufflehandler.ShuffleHandler;
 import org.apache.tez.test.service.rpc.TezTestServiceProtocolProtos.RunContainerRequestProto;
 import org.apache.tez.test.service.rpc.TezTestServiceProtocolProtos.SubmitWorkRequestProto;
 import org.apache.tez.util.ProtoConverters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Preconditions;
+import com.google.common.base.Stopwatch;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public class ContainerRunnerImpl extends AbstractService implements ContainerRunner {
 
@@ -300,7 +302,7 @@ public class ContainerRunnerImpl extends AbstractService implements ContainerRun
 
     @Override
     public ContainerExecutionResult call() throws Exception {
-      Stopwatch sw = new Stopwatch().start();
+      Stopwatch sw = Stopwatch.createStarted();
       tezChild =
           new TezChild(conf, request.getAmHost(), request.getAmPort(),
               request.getContainerIdString(),
@@ -310,7 +312,7 @@ public class ContainerRunnerImpl extends AbstractService implements ContainerRun
               new DefaultHadoopShim());
       ContainerExecutionResult result = tezChild.run();
       LOG.info("ExecutionTime for Container: " + request.getContainerIdString() + "=" +
-          sw.stop().elapsedMillis());
+          sw.stop().elapsed(TimeUnit.MILLISECONDS));
       return result;
     }
 
@@ -410,7 +412,7 @@ public class ContainerRunnerImpl extends AbstractService implements ContainerRun
     public ContainerExecutionResult call() throws Exception {
 
       // TODO Consolidate this code with TezChild.
-      Stopwatch sw = new Stopwatch().start();
+      Stopwatch sw = Stopwatch.createStarted();
       UserGroupInformation taskUgi = UserGroupInformation.createRemoteUser(request.getUser());
       taskUgi.addCredentials(credentials);
 
@@ -473,7 +475,7 @@ public class ContainerRunnerImpl extends AbstractService implements ContainerRun
         FileSystem.closeAllForUGI(taskUgi);
       }
       LOG.info("ExecutionTime for Container: " + request.getContainerIdString() + "=" +
-          sw.stop().elapsedMillis());
+          sw.stop().elapsed(TimeUnit.MILLISECONDS));
       return new ContainerExecutionResult(ContainerExecutionResult.ExitStatus.SUCCESS, null,
           null);
     }
