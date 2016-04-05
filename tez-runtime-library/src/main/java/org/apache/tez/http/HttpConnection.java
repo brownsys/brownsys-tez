@@ -72,7 +72,7 @@ public class HttpConnection extends BaseHttpConnection {
     this.jobTokenSecretMgr = jobTokenSecretManager;
     this.httpConnParams = connParams;
     this.url = url;
-    this.stopWatch = new Stopwatch();
+    this.stopWatch = Stopwatch.createUnstarted();
     if (LOG.isDebugEnabled()) {
       LOG.debug("MapOutput URL :" + url.toString());
     }
@@ -191,7 +191,7 @@ public class HttpConnection extends BaseHttpConnection {
     }
     if (LOG.isDebugEnabled()) {
       LOG.debug("Time taken to connect to " + url.toString() +
-          " " + stopWatch.elapsedTime(TimeUnit.MILLISECONDS) + " ms; connectionFailures="
+          " " + stopWatch.elapsed(TimeUnit.MILLISECONDS) + " ms; connectionFailures="
           + connectionFailures);
     }
     return true;
@@ -231,7 +231,7 @@ public class HttpConnection extends BaseHttpConnection {
     SecureShuffleUtils.verifyReply(replyHash, encHash, jobTokenSecretMgr);
     //Following log statement will be used by tez-tool perf-analyzer for mapping attempt to NM host
     LOG.info("for url=" + url +
-        " sent hash and receievd reply " + stopWatch.elapsedTime(TimeUnit.MILLISECONDS) + " ms");
+        " sent hash and receievd reply " + stopWatch.elapsed(TimeUnit.MILLISECONDS) + " ms");
   }
 
   /**
@@ -249,7 +249,7 @@ public class HttpConnection extends BaseHttpConnection {
     }
     if (LOG.isDebugEnabled()) {
       LOG.debug("Time taken to getInputStream (connect) " + url +
-          " " + stopWatch.elapsedTime(TimeUnit.MILLISECONDS) + " ms");
+          " " + stopWatch.elapsed(TimeUnit.MILLISECONDS) + " ms");
     }
     return input;
   }
@@ -294,7 +294,7 @@ public class HttpConnection extends BaseHttpConnection {
     }
     if (LOG.isDebugEnabled()) {
       LOG.debug("Time taken to cleanup connection to " + url +
-          " " + stopWatch.elapsedTime(TimeUnit.MILLISECONDS) + " ms");
+          " " + stopWatch.elapsed(TimeUnit.MILLISECONDS) + " ms");
     }
   }
 
