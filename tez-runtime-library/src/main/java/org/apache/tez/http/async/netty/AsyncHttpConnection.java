@@ -46,6 +46,9 @@ import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 
+import edu.brown.cs.systems.baggage.Baggage;
+import edu.brown.cs.systems.baggage.DetachedBaggage.StringEncoding;
+
 public class AsyncHttpConnection extends BaseHttpConnection {
 
   private static final Logger LOG = LoggerFactory.getLogger(AsyncHttpConnection.class);
@@ -145,6 +148,7 @@ public class AsyncHttpConnection extends BaseHttpConnection {
     rb.setHeader(SecureShuffleUtils.HTTP_HEADER_URL_HASH, encHash);
     rb.setHeader(ShuffleHeader.HTTP_HEADER_NAME, ShuffleHeader.DEFAULT_HTTP_HEADER_NAME);
     rb.setHeader(ShuffleHeader.HTTP_HEADER_VERSION, ShuffleHeader.DEFAULT_HTTP_HEADER_VERSION);
+    rb.setHeader("Baggage", Baggage.fork().toString(StringEncoding.BASE16));
     Request request = rb.setUrl(url.toString()).build();
 
     //for debugging
