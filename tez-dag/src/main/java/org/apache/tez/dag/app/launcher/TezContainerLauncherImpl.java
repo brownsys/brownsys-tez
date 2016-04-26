@@ -55,6 +55,8 @@ import org.apache.tez.dag.api.TezUncheckedException;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
+import edu.brown.cs.systems.netro.NetroStartUpEvents;
+
 
 // TODO See what part of this lifecycle and state management can be simplified.
 // Ideally, no state - only sendStart / sendStop.
@@ -389,9 +391,14 @@ public class TezContainerLauncherImpl extends ContainerLauncher {
     getContext().containerLaunchFailed(containerId, message);
   }
 
-
   @Override
   public void launchContainer(ContainerLaunchRequest launchRequest) {
+    // RASLEY: Moment right before container launcher is sent from Tez to NM
+    LOG.info("RASLEY: launchContainer " + System.currentTimeMillis() + ", "
+        + launchRequest.getContainerId());
+    NetroStartUpEvents.logTimestampEvent("launchContainer-TezToNM",
+        launchRequest.getContainerId().toString());
+    
     try {
       eventQueue.put(new ContainerOp(ContainerOp.OPType.LAUNCH_REQUEST, launchRequest));
     } catch (InterruptedException e) {
@@ -401,6 +408,12 @@ public class TezContainerLauncherImpl extends ContainerLauncher {
 
   @Override
   public void stopContainer(ContainerStopRequest stopRequest) {
+    // RASLEY: Moment right before container stop event is sent from Tez to NM
+    LOG.info("RASLEY: stopContainer " + System.currentTimeMillis() + ", "
+        + stopRequest.getContainerId());
+    NetroStartUpEvents.logTimestampEvent("stopContainer-TezToNM",
+        stopRequest.getContainerId().toString());
+
     try {
       eventQueue.put(new ContainerOp(ContainerOp.OPType.STOP_REQUEST, stopRequest));
     } catch (InterruptedException e) {

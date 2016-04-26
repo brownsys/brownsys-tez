@@ -64,6 +64,7 @@ import org.apache.hadoop.yarn.util.resource.Resources;
 import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
 import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.dag.api.TezUncheckedException;
+import org.apache.tez.dag.app.dag.TaskAttempt;
 import org.apache.tez.common.ContainerSignatureMatcher;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -71,6 +72,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+
+import edu.brown.cs.systems.netro.NetroStartUpEvents;
 
 /* TODO not yet updating cluster nodes on every allocate response
  * from RMContainerRequestor
@@ -1633,6 +1636,14 @@ public class YarnTaskSchedulerService extends TaskScheduler
       // remove all references of the request from AMRMClient
       amRmClient.removeContainerRequest(oldRequest);
     }
+    // RASLEY: Last point before Tez calls into Yarn RM asking for resources for
+    // task attempt. Should log time here for this task attempt.
+    TaskAttempt t = (TaskAttempt) task;
+    LOG.info("RASLEY: addTaskRequest " + System.currentTimeMillis() + ", "
+        + t.getTaskID() + ", " + t.getID());
+    NetroStartUpEvents.logTimestampEvent("AddTaskRequest-TezToRM",
+        t.getID().toString());
+    
     amRmClient.addContainerRequest(request);
   }
 
@@ -1814,6 +1825,12 @@ public class YarnTaskSchedulerService extends TaskScheduler
       }
       Object task = getTask(assigned);
       assert task != null;
+
+      // RASLEY: record assignment of container to task for later reference
+      LOG.info("RASLEY: bookKeeping " + System.currentTimeMillis() + ", "
+          + container.getId() + ", " + task);
+      NetroStartUpEvents.logTimestampEvent("bookKeeping-TaskToContainer",
+          container.getId().toString(), task.toString());
 
       LOG.info("Assigning container to task: "
         + "containerId=" + container.getId()

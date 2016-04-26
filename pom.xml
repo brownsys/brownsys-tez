@@ -88,6 +88,11 @@
     </dependency>
     <dependency>
       <groupId>edu.brown.cs.systems</groupId>
+      <artifactId>netro-common</artifactId>
+      <version>${tracingplane.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>edu.brown.cs.systems</groupId>
       <artifactId>retro-common</artifactId>
       <version>${tracingplane.version}</version>
     </dependency>
