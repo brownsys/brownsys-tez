@@ -34,6 +34,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Maps;
 
+import edu.brown.cs.systems.netro.NetroStartUpEvents;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.slf4j.Logger;
@@ -342,6 +344,10 @@ public class TaskImpl implements Task, EventHandler<TaskEvent> {
       ContainerContext containerContext,
       StateChangeNotifier stateChangeNotifier,
       Vertex vertex) {
+
+    NetroStartUpEvents.logTimestampEvent("TaskImpl-constructor",
+        vertexId.toString());
+
     this.conf = conf;
     this.clock = clock;
     ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
@@ -935,6 +941,10 @@ public class TaskImpl implements Task, EventHandler<TaskEvent> {
           // use tFinishedEvent.getTerminationCause after adding TaskTerminationCause to TaskFinishedEvent
           task.eventHandler.handle(new TaskEventTermination(task.taskId,
               TaskAttemptTerminationCause.UNKNOWN_ERROR, tFinishedEvent.getDiagnostics(), true));
+          NetroStartUpEvents.logContainerStateEvent(task.getTaskId().toString(),
+              this.getClass().getSimpleName(), event.toString(),
+              task.getState().toString(), TaskStateInternal.NEW.toString(),
+              null);
           return TaskStateInternal.NEW;
         }
       } else {
@@ -949,6 +959,10 @@ public class TaskImpl implements Task, EventHandler<TaskEvent> {
       task.baseTaskSpec = scheduleEvent.getBaseTaskSpec();
       // For now, initial scheduling dependency is due to vertex manager scheduling
       task.addAndScheduleAttempt(null);
+      NetroStartUpEvents.logContainerStateEvent(task.getTaskId().toString(),
+          this.getClass().getSimpleName(), event.toString(),
+          task.getState().toString(), TaskStateInternal.SCHEDULED.toString(),
+          null);
       return TaskStateInternal.SCHEDULED;
     }
   }
@@ -1031,6 +1045,10 @@ public class TaskImpl implements Task, EventHandler<TaskEvent> {
               + "taskId=" + task.getTaskId());
           task.successfulAttempt = null;
           task.addAndScheduleAttempt(successTaId);
+          NetroStartUpEvents.logContainerStateEvent(task.getTaskId().toString(),
+              this.getClass().getSimpleName(), event.toString(),
+              task.getState().toString(), TaskStateInternal.RUNNING.toString(),
+              null);
           return TaskStateInternal.RUNNING;
         } else {
           task.successfulAttempt = successTaId;
@@ -1082,7 +1100,12 @@ public class TaskImpl implements Task, EventHandler<TaskEvent> {
               .getID(), diagnostics, errCause));
         }
       }
-      return task.finished(TaskStateInternal.SUCCEEDED);
+      TaskStateInternal newState = task.finished(TaskStateInternal.SUCCEEDED); 
+      NetroStartUpEvents.logContainerStateEvent(task.getTaskId().toString(),
+          this.getClass().getSimpleName(), event.toString(),
+          task.getState().toString(), newState.toString(),
+          null);
+      return newState;
     }
   }
 
@@ -1124,9 +1147,18 @@ public class TaskImpl implements Task, EventHandler<TaskEvent> {
         task.eventHandler.handle(
             new VertexEventTaskCompleted(
                 task.taskId, getExternalState(TaskStateInternal.KILLED)));
+        NetroStartUpEvents.logContainerStateEvent(task.getTaskId().toString(),
+            this.getClass().getSimpleName(), event.toString(),
+            task.getState().toString(), TaskStateInternal.KILLED.toString(),
+            null);
         return TaskStateInternal.KILLED;
       }
-      return task.getInternalState();
+      TaskStateInternal newState = task.getInternalState();
+      NetroStartUpEvents.logContainerStateEvent(task.getTaskId().toString(),
+          this.getClass().getSimpleName(), event.toString(),
+          task.getState().toString(), newState.toString(),
+          null);
+      return newState;
     }
   }
   
@@ -1176,9 +1208,19 @@ public class TaskImpl implements Task, EventHandler<TaskEvent> {
         task.logJobHistoryTaskFailedEvent(TaskState.FAILED);
         task.eventHandler.handle(
             new VertexEventTaskCompleted(task.taskId, TaskState.FAILED));
-        return task.finished(TaskStateInternal.FAILED);
+        TaskStateInternal newState = task.finished(TaskStateInternal.FAILED);
+        NetroStartUpEvents.logContainerStateEvent(task.getTaskId().toString(),
+            this.getClass().getSimpleName(), event.toString(),
+            task.getState().toString(), newState.toString(),
+            null);
+        return newState;
       }
-      return getDefaultState(task);
+      TaskStateInternal newState = getDefaultState(task);
+      NetroStartUpEvents.logContainerStateEvent(task.getTaskId().toString(),
+          this.getClass().getSimpleName(), event.toString(),
+          task.getState().toString(), newState.toString(),
+          null);
+      return newState;
     }
 
     protected TaskStateInternal getDefaultState(TaskImpl task) {
@@ -1202,7 +1244,8 @@ public class TaskImpl implements Task, EventHandler<TaskEvent> {
             + task.getTaskId());
         task.internalError(event.getType());
       }
-
+      String previousState = task.getState().toString();
+      
       TaskEventTAUpdate castEvent = (TaskEventTAUpdate) event;
       TezTaskAttemptID failedAttemptId = castEvent.getTaskAttemptID();
       TaskAttempt failedAttempt = task.getAttempt(failedAttemptId);
@@ -1223,6 +1266,9 @@ public class TaskImpl implements Task, EventHandler<TaskEvent> {
           !failedAttemptId.equals(task.successfulAttempt)) {
         // don't allow a different task attempt to override a previous
         // succeeded state
+        NetroStartUpEvents.logContainerStateEvent(task.getTaskId().toString(),
+            this.getClass().getSimpleName(), event.toString(), previousState,
+            TaskStateInternal.SUCCEEDED.toString(), null);
         return TaskStateInternal.SUCCEEDED;
       }
       
@@ -1244,6 +1290,10 @@ public class TaskImpl implements Task, EventHandler<TaskEvent> {
         task.eventHandler.handle(new VertexEventTaskReschedule(task.taskId));
       }
 
+      NetroStartUpEvents.logContainerStateEvent(task.getTaskId().toString(),
+          this.getClass().getSimpleName(), event.toString(),
+          previousState, returnState.toString(),
+          null);
       return returnState;
     }
     
@@ -1283,11 +1333,19 @@ public class TaskImpl implements Task, EventHandler<TaskEvent> {
         // to the RM. But the RM would ignore that just like it would ignore
         // currently pending container requests affinitized to bad nodes.
         task.addAndScheduleAttempt(attemptId);
+        NetroStartUpEvents.logContainerStateEvent(task.getTaskId().toString(),
+            this.getClass().getSimpleName(), event.toString(),
+            task.getState().toString(), TaskStateInternal.SCHEDULED.toString(),
+            null);
         return TaskStateInternal.SCHEDULED;
       } else {
         // nothing to do
         LOG.info("Ignoring kill of attempt: " + attemptId + " because attempt: " +
             task.successfulAttempt + " is already successful");
+        NetroStartUpEvents.logContainerStateEvent(task.getTaskId().toString(),
+            this.getClass().getSimpleName(), event.toString(),
+            task.getState().toString(), TaskStateInternal.SUCCEEDED.toString(),
+            null);
         return TaskStateInternal.SUCCEEDED;
       }
     }
@@ -1297,6 +1355,10 @@ public class TaskImpl implements Task, EventHandler<TaskEvent> {
     implements SingleArcTransition<TaskImpl, TaskEvent> {
     @Override
     public void transition(TaskImpl task, TaskEvent event) {
+      NetroStartUpEvents.logContainerStateEvent(task.getTaskId().toString(),
+          this.getClass().getSimpleName(), event.toString(),
+          task.getState().toString(), TaskStateInternal.KILLED.toString(),
+          null);
       TaskEventTermination terminateEvent = (TaskEventTermination)event;
       task.addDiagnosticInfo(terminateEvent.getDiagnosticInfo());
       if (terminateEvent.isFromRecovery()) {
@@ -1388,6 +1450,10 @@ public class TaskImpl implements Task, EventHandler<TaskEvent> {
       task.metrics.launchedTask(task);
       task.metrics.runningTask(task);
       */
+      NetroStartUpEvents.logContainerStateEvent(task.getTaskId().toString(),
+          this.getClass().getSimpleName(), event.toString(),
+          task.getState().toString(), TaskStateInternal.RUNNING.toString(),
+          null);
     }
   }
 
